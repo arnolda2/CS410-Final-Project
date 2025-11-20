@@ -9,10 +9,21 @@ export interface Shot {
   search_text: string;
   date: string;
   dist: number;
+  zone: string;
 }
 
 export interface SearchFilters {
   year?: number | 'all';
   made?: boolean | 'all';
-  player?: string | null; // New filter for specific player
+  player?: string | null;
+  sortBy?: 'relevance' | 'date';
+  minDist?: number;
+  maxDist?: number;
+}
+
+export interface ZoneStats {
+  zone: string;
+  fgPct: number;
+  attempts: number;
+  leagueFgPct: number;
 }

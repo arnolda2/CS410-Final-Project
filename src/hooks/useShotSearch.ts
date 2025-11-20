@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import MiniSearch from 'minisearch';
-import type { Shot, SearchFilters } from '../types';
+import type { Shot, SearchFilters, ZoneStats } from '../types';
 
 const DATA_URL = import.meta.env.BASE_URL + 'shots_index.json.gz';
 
@@ -11,9 +11,13 @@ export function useShotSearch() {
   const [error, setError] = useState<string | null>(null);
   const [uniquePlayers, setUniquePlayers] = useState<string[]>([]);
   
-  // Keep reference to search engine
+  // Stats
+  const [zoneStats, setZoneStats] = useState<ZoneStats[]>([]);
+  
+  // Keep reference to search engine and data
   const miniSearchRef = useRef<MiniSearch<Shot> | null>(null);
   const allShotsRef = useRef<Shot[]>([]);
+  const leagueZoneStatsRef = useRef<Map<string, { made: number; total: number }>>(new Map());
 
   useEffect(() => {
     async function loadData() {
@@ -35,9 +39,25 @@ export function useShotSearch() {
             data = await clone.json();
         }
         
+        // Sort by date descending (newest first) by default
+        data.sort((a, b) => b.date.localeCompare(a.date));
+
         allShotsRef.current = data;
-        setShots(data.slice(0, 2000)); // Initial display limited to avoid lag
         
+        // Calculate League Stats per Zone
+        const leagueStats = new Map<string, { made: number; total: number }>();
+        data.forEach(shot => {
+            if (!shot.zone) return;
+            const current = leagueStats.get(shot.zone) || { made: 0, total: 0 };
+            current.total++;
+            if (shot.made) current.made++;
+            leagueStats.set(shot.zone, current);
+        });
+        leagueZoneStatsRef.current = leagueStats;
+
+        setShots(data.slice(0, 2000)); // Initial display
+        calculateZoneStats(data);
+
         // Extract unique players
         const players = new Set(data.map(s => s.player));
         setUniquePlayers(Array.from(players).sort());
@@ -49,7 +69,7 @@ export function useShotSearch() {
             try {
                 const miniSearch = new MiniSearch<Shot>({
                     fields: ['search_text'], // Fields to index
-                    storeFields: ['id', 'player', 'team', 'x', 'y', 'made', 'year', 'date', 'dist'], // Fields to return
+                    storeFields: ['id', 'player', 'team', 'x', 'y', 'made', 'year', 'date', 'dist', 'zone'], // Fields to return
                     searchOptions: {
                         boost: { player: 2, team: 1.5 },
                         prefix: true,
@@ -76,23 +96,46 @@ export function useShotSearch() {
     loadData();
   }, []);
 
-  const search = (query: string, filters: SearchFilters) => {
-    if (!query && filters.year === 'all' && filters.made === 'all' && !filters.player) {
-      setShots(allShotsRef.current.slice(0, 2000)); // Return sample of all shots
-      return;
-    }
+  const calculateZoneStats = (currentShots: Shot[]) => {
+      const stats = new Map<string, { made: number; total: number }>();
+      
+      currentShots.forEach(shot => {
+          if (!shot.zone) return;
+          const current = stats.get(shot.zone) || { made: 0, total: 0 };
+          current.total++;
+          if (shot.made) current.made++;
+          stats.set(shot.zone, current);
+      });
 
+      const result: ZoneStats[] = [];
+      stats.forEach((val, zone) => {
+          // Filter out low sample size zones to keep chart clean? 
+          // Or just show all. Let's show if > 0.
+          const league = leagueZoneStatsRef.current.get(zone);
+          const leaguePct = league && league.total > 0 ? (league.made / league.total) * 100 : 0;
+          
+          result.push({
+              zone,
+              fgPct: (val.made / val.total) * 100,
+              attempts: val.total,
+              leagueFgPct: leaguePct
+          });
+      });
+
+      // Sort by attempts descending
+      result.sort((a, b) => b.attempts - a.attempts);
+      setZoneStats(result);
+  };
+
+  const search = (query: string, filters: SearchFilters) => {
     let results: Shot[] = [];
 
     // If there is a query, use MiniSearch
     if (query && miniSearchRef.current) {
       // @ts-ignore - MiniSearch types can be tricky with storeFields
       const searchResults = miniSearchRef.current.search(query);
-      // Map back to full shot objects (or use stored fields)
-      // MiniSearch returns hits with score, etc. We cast to Shot.
       results = searchResults.map(hit => hit as unknown as Shot);
     } else {
-      // No query, start with all (or filtered subset if huge)
       results = allShotsRef.current;
     }
 
@@ -104,8 +147,21 @@ export function useShotSearch() {
          if (shot.made !== isMade) return false;
       }
       if (filters.player && shot.player !== filters.player) return false;
+      
+      // Distance filters
+      if (filters.minDist !== undefined && shot.dist < filters.minDist) return false;
+      if (filters.maxDist !== undefined && shot.dist > filters.maxDist) return false;
+
       return true;
     });
+
+    // Calculate stats on FULL filtered set
+    calculateZoneStats(results);
+
+    // Apply sorting
+    if (filters.sortBy === 'date') {
+        results.sort((a, b) => b.date.localeCompare(a.date));
+    }
 
     // Limit results for performance
     setShots(results.slice(0, 2000));
@@ -120,6 +176,7 @@ export function useShotSearch() {
 
   return {
     shots,
+    zoneStats,
     isLoading,
     isIndexing,
     error,

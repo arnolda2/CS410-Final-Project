@@ -23,6 +23,9 @@ def process_data():
         # Filter regular season if possible (assuming all shots in these files are valid for now)
         # The file structure doesn't explicitly show SEASON_TYPE, so we use all.
         
+        # Convert date to YYYY-MM-DD for string sorting
+        df['GAME_DATE'] = pd.to_datetime(df['GAME_DATE']).dt.strftime('%Y-%m-%d')
+        
         # Create search_text
         # Combine: Player, Team, Action Type, Zone info, Shot Type
         # Handle NaN values by replacing with empty string
@@ -55,7 +58,8 @@ def process_data():
             'SEASON_1', 
             'search_text',
             'GAME_DATE',
-            'SHOT_DISTANCE'
+            'SHOT_DISTANCE',
+            'BASIC_ZONE'
         ]].copy()
         
         df_selected.rename(columns={
@@ -65,7 +69,8 @@ def process_data():
             'LOC_Y': 'y',
             'SEASON_1': 'year',
             'GAME_DATE': 'date',
-            'SHOT_DISTANCE': 'dist'
+            'SHOT_DISTANCE': 'dist',
+            'BASIC_ZONE': 'zone'
         }, inplace=True)
         
         # Optimization: Limit precision of float coordinates to 1 decimal place to save space
