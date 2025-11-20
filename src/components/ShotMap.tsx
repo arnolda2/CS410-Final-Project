@@ -8,8 +8,6 @@ interface ShotMapProps {
 
 // NBA Court Dimensions (feet)
 // Hoop center is at (0,0)
-const COURT_WIDTH = 50;
-const COURT_HEIGHT = 47; // Half court
 
 export const ShotMap: React.FC<ShotMapProps> = ({ shots }) => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -55,9 +53,7 @@ export const ShotMap: React.FC<ShotMapProps> = ({ shots }) => {
     const courtGroup = svg.append("g").attr("class", "court");
 
     // Colors
-    const courtColor = "#f8f9fa";
     const lineColor = "#000";
-    const paintColor = "#e9ecef"; // Optional fill for key
     
     // 1. Paint Area (Key)
     // 16ft wide (-8 to 8). From baseline (-5.25) to Free Throw line (13.75)
