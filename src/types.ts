@@ -14,5 +14,5 @@ export interface Shot {
 export interface SearchFilters {
   year?: number | 'all';
   made?: boolean | 'all';
+  player?: string | null; // New filter for specific player
 }
-

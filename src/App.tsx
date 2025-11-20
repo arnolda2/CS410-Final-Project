@@ -6,19 +6,24 @@ import type { SearchFilters } from './types';
 import { Filter, BarChart3 } from 'lucide-react';
 
 function App() {
-  const { shots, isLoading, isIndexing, error, search } = useShotSearch();
-  const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState<SearchFilters>({ year: 'all', made: 'all' });
+  const { shots, isLoading, isIndexing, error, search, suggestPlayers } = useShotSearch();
+  // We don't need independent query state here anymore, SearchBar manages it
+  const [filters, setFilters] = useState<SearchFilters>({ year: 'all', made: 'all', player: null });
+  
+  // Store last query to re-run search when filters update
+  const [lastQuery, setLastQuery] = useState('');
 
-  const handleSearch = (newQuery: string) => {
-    setQuery(newQuery);
-    search(newQuery, filters);
-  };
-
-  const handleFilterChange = (key: keyof SearchFilters, value: any) => {
-    const newFilters = { ...filters, [key]: value };
+  const onSearch = (query: string, player: string | null) => {
+    setLastQuery(query);
+    const newFilters = { ...filters, player };
     setFilters(newFilters);
     search(query, newFilters);
+  };
+
+  const onFilterUpdate = (key: keyof SearchFilters, value: any) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    search(lastQuery, newFilters);
   };
 
   // Calculate stats
@@ -35,14 +40,18 @@ function App() {
           </h1>
           <a href="https://github.com" className="text-sm hover:underline text-gray-200">
             View on GitHub
-        </a>
-      </div>
+          </a>
+        </div>
       </header>
 
       <main className="container mx-auto p-6">
         <div className="text-center mb-8">
           <h2 className="text-xl mb-4">Natural Language Shot Search (2021-2024)</h2>
-          <SearchBar onSearch={handleSearch} />
+          
+          <SearchBar 
+            onSearch={onSearch} 
+            onQueryChange={suggestPlayers}
+          />
           
           <div className="flex flex-wrap justify-center gap-4 text-sm">
             <div className="flex items-center gap-2 bg-white p-2 rounded shadow-sm">
@@ -50,7 +59,7 @@ function App() {
               <select 
                 className="bg-transparent outline-none"
                 value={filters.year}
-                onChange={(e) => handleFilterChange('year', e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                onChange={(e) => onFilterUpdate('year', e.target.value === 'all' ? 'all' : Number(e.target.value))}
               >
                 <option value="all">All Seasons</option>
                 <option value={2021}>2020-21</option>
@@ -67,7 +76,7 @@ function App() {
                 value={String(filters.made)}
                 onChange={(e) => {
                   const val = e.target.value;
-                  handleFilterChange('made', val === 'all' ? 'all' : val === 'true');
+                  onFilterUpdate('made', val === 'all' ? 'all' : val === 'true');
                 }}
               >
                 <option value="all">All Shots</option>
@@ -82,7 +91,7 @@ function App() {
             <div className="text-center py-10">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nba-blue mx-auto mb-4"></div>
                 <p>Loading Shot Data & Building Index...</p>
-                <p className="text-sm text-gray-500 mt-2">This may take a moment (approx 200MB data)</p>
+                <p className="text-sm text-gray-500 mt-2">This may take a moment (approx 14MB compressed)</p>
             </div>
         )}
 
@@ -146,7 +155,7 @@ function App() {
           </div>
         )}
       </main>
-      </div>
+    </div>
   );
 }
 

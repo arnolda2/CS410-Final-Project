@@ -9,6 +9,7 @@ export function useShotSearch() {
   const [isLoading, setIsLoading] = useState(true);
   const [isIndexing, setIsIndexing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uniquePlayers, setUniquePlayers] = useState<string[]>([]);
   
   // Keep reference to search engine
   const miniSearchRef = useRef<MiniSearch<Shot> | null>(null);
@@ -23,10 +24,6 @@ export function useShotSearch() {
         
         let data: Shot[];
         
-        // Check if we need to decompress (browser should handle if Content-Encoding is set, 
-        // but for static hosting of .gz file we might need manual decompression)
-        // Note: GitHub Pages does not automatically serve .gz with Content-Encoding header 
-        // for .json.gz files usually, so we treat it as a binary stream to decompress.
         try {
              const ds = new DecompressionStream('gzip');
              const decompressedStream = response.body?.pipeThrough(ds);
@@ -34,8 +31,6 @@ export function useShotSearch() {
              data = await new Response(decompressedStream).json();
         } catch (e) {
             console.warn("Decompression failed or not needed, trying plain JSON", e);
-            // Fallback in case it was served decompressed (some servers might auto-decompress)
-            // or if we switched back to .json
             const clone = response.clone();
             data = await clone.json();
         }
@@ -43,6 +38,10 @@ export function useShotSearch() {
         allShotsRef.current = data;
         setShots(data.slice(0, 2000)); // Initial display limited to avoid lag
         
+        // Extract unique players
+        const players = new Set(data.map(s => s.player));
+        setUniquePlayers(Array.from(players).sort());
+
         setIsLoading(false);
         
         // Initialize search index in background
@@ -77,7 +76,7 @@ export function useShotSearch() {
   }, []);
 
   const search = (query: string, filters: SearchFilters) => {
-    if (!query && filters.year === 'all' && filters.made === 'all') {
+    if (!query && filters.year === 'all' && filters.made === 'all' && !filters.player) {
       setShots(allShotsRef.current.slice(0, 2000)); // Return sample of all shots
       return;
     }
@@ -103,6 +102,7 @@ export function useShotSearch() {
          const isMade = filters.made === true ? 1 : 0;
          if (shot.made !== isMade) return false;
       }
+      if (filters.player && shot.player !== filters.player) return false;
       return true;
     });
 
@@ -110,11 +110,19 @@ export function useShotSearch() {
     setShots(results.slice(0, 2000));
   };
 
+  // Helper to find players matching a prefix
+  const suggestPlayers = (prefix: string): string[] => {
+    if (!prefix || prefix.length < 2) return [];
+    const lower = prefix.toLowerCase();
+    return uniquePlayers.filter(p => p.toLowerCase().includes(lower)).slice(0, 10);
+  };
+
   return {
     shots,
     isLoading,
     isIndexing,
     error,
-    search
+    search,
+    suggestPlayers
   };
 }
