@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ShotMap } from './components/ShotMap';
 import { SearchBar } from './components/SearchBar';
 import { useShotSearch } from './hooks/useShotSearch';
-import { SearchFilters } from './types';
+import type { SearchFilters } from './types';
 import { Filter, BarChart3 } from 'lucide-react';
 
 function App() {

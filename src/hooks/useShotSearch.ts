@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import MiniSearch from 'minisearch';
-import { Shot, SearchFilters } from '../types';
+import type { Shot, SearchFilters } from '../types';
 
 const DATA_URL = import.meta.env.BASE_URL + 'shots_index.json.gz';
 

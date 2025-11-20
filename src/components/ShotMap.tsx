@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import { Shot } from '../types';
+import type { Shot } from '../types';
 
 interface ShotMapProps {
   shots: Shot[];
@@ -104,28 +104,13 @@ export const ShotMap: React.FC<ShotMapProps> = ({ shots }) => {
       .attr("y2", yScale(90))
       .attr("stroke", "black");
       
-    // Arc
-    // D3 arc generator? Or just a path.
-    const arcGenerator = d3.path();
-    // Top of arc
-    // We need to draw arc from (-220, 90) to (220, 90) with radius 237.5 centered at (0,0)
-    // In SVG path syntax: M startX startY A rx ry x-axis-rotation large-arc-flag sweep-flag endX endY
-    // But using d3.path is cleaner if calculated manually, or just SVG string.
+    // 3-point line
+    // Side lines (22ft from center = 220 units)
+    // Arc (23.75ft = 237.5 units)
     
-    // Using d3.arc is for pie charts.
-    // Let's manually construct path string.
-    
-    // Angle where corner 3 meets arc:
-    // x = 220, r = 237.5. y = sqrt(r^2 - x^2) = sqrt(237.5^2 - 220^2) ~= 89.47
-    
-    const arcPath = d3.path();
-    arcPath.moveTo(xScale(-220), yScale(90));
-    // arc(x, y, radius, startAngle, endAngle) -> D3 uses canvas-like context
-    // SVG arc: A rx ry rot large sweep x y
-    
-    // It's easier to just draw points for shots and a static image for court, but drawing lines is cleaner.
-    // I'll approximate the arc for now.
-    
+    // Left corner 3
+    courtGroup.append("line")
+
     courtGroup.append("path")
         .attr("d", `M ${xScale(-220)} ${yScale(90)} A ${xScale(237.5)-xScale(0)} ${yScale(0)-yScale(237.5)} 0 0 1 ${xScale(220)} ${yScale(90)}`) 
         // Note: y scale is inverted, so ry might be negative diff? No, radius is absolute.
