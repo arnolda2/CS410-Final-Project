@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ShotMap } from './components/ShotMap';
 import { SearchBar } from './components/SearchBar';
 import { ZoneChart } from './components/ZoneChart';
 import { DistanceFilter } from './components/DistanceFilter';
+import { InfoModal } from './components/InfoModal';
 import { useShotSearch } from './hooks/useShotSearch';
 import type { SearchFilters } from './types';
 import { 
@@ -10,7 +11,8 @@ import {
   BarChart3, 
   List, 
   Map as MapIcon,
-  Github
+  Github,
+  Info
 } from 'lucide-react';
 
 function App() {
@@ -28,13 +30,27 @@ function App() {
   // Store last query to re-run search when filters update
   const [lastQuery, setLastQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'stats' | 'recent'>('stats');
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
-  const onSearch = (query: string, player: string | null) => {
+  // Keep filters ref for stable callbacks
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  // Stable search handler for SearchBar
+  const onSearch = useCallback((query: string) => {
     setLastQuery(query);
-    const newFilters = { ...filters, player };
-    setFilters(newFilters);
+    const currentFilters = filtersRef.current;
+    // We rely on text search now, so ensure strict player filter is cleared
+    const newFilters = { ...currentFilters, player: null };
+    
+    if (currentFilters.player !== null) {
+        setFilters(newFilters);
+    }
+    
     search(query, newFilters);
-  };
+  }, [search]);
 
   const updateFilter = (updates: Partial<SearchFilters>) => {
     const newFilters = { ...filters, ...updates };
@@ -49,6 +65,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <InfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
+
       {/* Navbar */}
       <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex justify-between items-center">
@@ -60,6 +78,14 @@ function App() {
           </div>
           
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsInfoOpen(true)}
+              className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-sm font-medium"
+            >
+              <Info size={20} />
+              <span className="hidden md:inline">How it works</span>
+            </button>
+            <div className="h-5 w-px bg-slate-800"></div>
             <a href="https://github.com" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white transition-colors">
               <Github size={20} />
             </a>

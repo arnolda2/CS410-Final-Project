@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import MiniSearch from 'minisearch';
 import type { Shot, SearchFilters, ZoneStats } from '../types';
 
@@ -56,7 +56,10 @@ export function useShotSearch() {
         leagueZoneStatsRef.current = leagueStats;
 
         setShots(data.slice(0, 2000)); // Initial display
-        calculateZoneStats(data);
+        
+        // Calculate initial zone stats
+        const initialZoneStats = computeZoneStats(data, leagueStats);
+        setZoneStats(initialZoneStats);
 
         // Extract unique players
         const players = new Set(data.map(s => s.player));
@@ -96,7 +99,8 @@ export function useShotSearch() {
     loadData();
   }, []);
 
-  const calculateZoneStats = (currentShots: Shot[]) => {
+  // Helper pure function to calculate stats
+  const computeZoneStats = (currentShots: Shot[], leagueStats: Map<string, { made: number; total: number }>) => {
       const stats = new Map<string, { made: number; total: number }>();
       
       currentShots.forEach(shot => {
@@ -109,9 +113,7 @@ export function useShotSearch() {
 
       const result: ZoneStats[] = [];
       stats.forEach((val, zone) => {
-          // Filter out low sample size zones to keep chart clean? 
-          // Or just show all. Let's show if > 0.
-          const league = leagueZoneStatsRef.current.get(zone);
+          const league = leagueStats.get(zone);
           const leaguePct = league && league.total > 0 ? (league.made / league.total) * 100 : 0;
           
           result.push({
@@ -124,15 +126,15 @@ export function useShotSearch() {
 
       // Sort by attempts descending
       result.sort((a, b) => b.attempts - a.attempts);
-      setZoneStats(result);
+      return result;
   };
 
-  const search = (query: string, filters: SearchFilters) => {
+  const search = useCallback((query: string, filters: SearchFilters) => {
     let results: Shot[] = [];
 
     // If there is a query, use MiniSearch
     if (query && miniSearchRef.current) {
-      // @ts-ignore - MiniSearch types can be tricky with storeFields
+      // @ts-ignore - MiniSearch types
       const searchResults = miniSearchRef.current.search(query);
       results = searchResults.map(hit => hit as unknown as Shot);
     } else {
@@ -156,23 +158,31 @@ export function useShotSearch() {
     });
 
     // Calculate stats on FULL filtered set
-    calculateZoneStats(results);
+    const newZoneStats = computeZoneStats(results, leagueZoneStatsRef.current);
+    setZoneStats(newZoneStats);
 
     // Apply sorting
     if (filters.sortBy === 'date') {
         results.sort((a, b) => b.date.localeCompare(a.date));
+    } else if (filters.sortBy === 'relevance' && !query) {
+        // If relevance requested but no query, fallback to date
+         results.sort((a, b) => b.date.localeCompare(a.date));
     }
+    // Note: MiniSearch results are already sorted by relevanceScore if query exists, 
+    // but we might have lost order during filtering? 
+    // MiniSearch returns sorted hits. filter preserves order.
+    // So if sortBy is relevance, we don't re-sort unless we want to force it.
 
     // Limit results for performance
     setShots(results.slice(0, 2000));
-  };
+  }, []);
 
   // Helper to find players matching a prefix
-  const suggestPlayers = (prefix: string): string[] => {
+  const suggestPlayers = useCallback((prefix: string): string[] => {
     if (!prefix || prefix.length < 2) return [];
     const lower = prefix.toLowerCase();
     return uniquePlayers.filter(p => p.toLowerCase().includes(lower)).slice(0, 10);
-  };
+  }, [uniquePlayers]);
 
   return {
     shots,

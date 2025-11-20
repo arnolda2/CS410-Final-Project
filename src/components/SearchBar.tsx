@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface SearchBarProps {
-  onSearch: (query: string, player: string | null) => void;
+  onSearch: (query: string) => void;
   // Function to get suggestions for autocomplete
   onQueryChange: (query: string) => string[]; 
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onQueryChange }) => {
   const [query, setQuery] = useState('');
-  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -28,24 +28,26 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onQueryChange })
   // Debounce search for parent component
   useEffect(() => {
     const debounce = setTimeout(() => {
-      // If we have a selected player, the text query might be additional context like "corner 3"
-      // Or if just typing, pass it all.
-      onSearch(query, selectedPlayer);
+      onSearch(query);
     }, 300);
     return () => clearTimeout(debounce);
-  }, [query, selectedPlayer, onSearch]);
+  }, [query, onSearch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
     
+    // Suggest players if we have enough chars and it looks like a name start
+    // Simple logic: if text is short or we are typing the first word
     if (val.length > 1) {
-      const playerMatches = onQueryChange(val);
-      // Only show suggestions if we found players matching the start of the query
-      // or if the query matches a player name logic.
-      // For simplicity: If the query *is* a player name prefix.
-      setSuggestions(playerMatches);
-      setShowSuggestions(playerMatches.length > 0);
+      // check if we already have a comma (simple heuristic to stop suggesting after player selected)
+      if (!val.includes(',')) {
+          const playerMatches = onQueryChange(val);
+          setSuggestions(playerMatches);
+          setShowSuggestions(playerMatches.length > 0);
+      } else {
+          setShowSuggestions(false);
+      }
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -53,55 +55,42 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onQueryChange })
   };
 
   const handleSelectPlayer = (player: string) => {
-    setSelectedPlayer(player);
-    setQuery(''); // Clear query to let user type shot type
+    setQuery(`${player}, `);
     setSuggestions([]);
     setShowSuggestions(false);
-  };
-
-  const clearPlayer = () => {
-    setSelectedPlayer(null);
-    // Optionally keep query or clear it?
-    // setQuery(''); 
+    inputRef.current?.focus();
   };
 
   return (
     <div className="relative w-full max-w-xl mx-auto mb-6" ref={wrapperRef}>
-      <div className="flex items-center w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus-within:ring-blue-500 focus-within:border-blue-500 focus-within:ring-1">
+      <div className="flex items-center w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus-within:ring-blue-500 focus-within:border-blue-500 focus-within:ring-1 shadow-sm transition-all">
         <div className="flex items-center pl-2 pointer-events-none">
           <Search className="w-5 h-5 text-gray-400" />
         </div>
         
-        <div className="flex flex-wrap items-center flex-1 gap-2 ml-2">
-          {/* Player Chip */}
-          {selectedPlayer && (
-            <div className="flex items-center bg-nba-blue text-white text-xs px-2 py-1 rounded-full whitespace-nowrap">
-              <span>{selectedPlayer}</span>
-              <button onClick={clearPlayer} className="ml-1 hover:text-red-200 focus:outline-none">
-                <X size={12} />
-              </button>
-            </div>
-          )}
-
-          <input
+        <input
+            ref={inputRef}
             type="text"
-            className="flex-1 min-w-[150px] bg-transparent outline-none py-2"
-            placeholder={selectedPlayer ? "Type shot context (e.g. 'corner 3')..." : "Search shots or player..."}
+            className="flex-1 ml-3 bg-transparent outline-none py-2 placeholder:text-slate-400"
+            placeholder="Search shots (e.g. 'Steph Curry, corner 3')..."
             value={query}
             onChange={handleInputChange}
-            onFocus={() => query.length > 1 && suggestions.length > 0 && setShowSuggestions(true)}
-          />
-        </div>
+            onFocus={() => {
+                if (query.length > 1 && !query.includes(',') && suggestions.length > 0) {
+                    setShowSuggestions(true);
+                }
+            }}
+        />
       </div>
 
       {/* Autocomplete Dropdown */}
       {showSuggestions && (
-        <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
-          <div className="p-2 text-xs text-gray-500 uppercase font-semibold bg-gray-50">Players</div>
+        <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto overflow-x-hidden">
+          <div className="p-2 text-[10px] font-bold text-slate-400 uppercase bg-slate-50 tracking-wider">Suggested Players</div>
           {suggestions.map((player) => (
             <div
               key={player}
-              className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-gray-700"
+              className="px-4 py-2.5 hover:bg-blue-50 cursor-pointer text-sm text-slate-700 font-medium transition-colors"
               onClick={() => handleSelectPlayer(player)}
             >
               {player}
