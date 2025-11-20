@@ -67,29 +67,31 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onQueryChange })
 
   return (
     <div className="relative w-full max-w-xl mx-auto mb-6" ref={wrapperRef}>
-      <div className="relative flex items-center">
-        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+      <div className="flex items-center w-full p-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus-within:ring-blue-500 focus-within:border-blue-500 focus-within:ring-1">
+        <div className="flex items-center pl-2 pointer-events-none">
           <Search className="w-5 h-5 text-gray-400" />
         </div>
         
-        {/* Player Chip */}
-        {selectedPlayer && (
-          <div className="absolute left-10 flex items-center bg-nba-blue text-white text-xs px-2 py-1 rounded-full z-10">
-            <span>{selectedPlayer}</span>
-            <button onClick={clearPlayer} className="ml-1 hover:text-red-200">
-              <X size={12} />
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center flex-1 gap-2 ml-2">
+          {/* Player Chip */}
+          {selectedPlayer && (
+            <div className="flex items-center bg-nba-blue text-white text-xs px-2 py-1 rounded-full whitespace-nowrap">
+              <span>{selectedPlayer}</span>
+              <button onClick={clearPlayer} className="ml-1 hover:text-red-200 focus:outline-none">
+                <X size={12} />
+              </button>
+            </div>
+          )}
 
-        <input
-          type="text"
-          className={`block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 outline-none ${selectedPlayer ? 'pl-32' : ''}`} // Adjust padding if chip exists
-          placeholder={selectedPlayer ? "Type shot context (e.g. 'corner 3')..." : "Search shots or player (e.g., 'Curry', 'LeBron')..."}
-          value={query}
-          onChange={handleInputChange}
-          onFocus={() => query.length > 1 && suggestions.length > 0 && setShowSuggestions(true)}
-        />
+          <input
+            type="text"
+            className="flex-1 min-w-[150px] bg-transparent outline-none py-2"
+            placeholder={selectedPlayer ? "Type shot context (e.g. 'corner 3')..." : "Search shots or player..."}
+            value={query}
+            onChange={handleInputChange}
+            onFocus={() => query.length > 1 && suggestions.length > 0 && setShowSuggestions(true)}
+          />
+        </div>
       </div>
 
       {/* Autocomplete Dropdown */}

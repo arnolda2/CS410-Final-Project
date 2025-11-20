@@ -53,7 +53,8 @@ export function useShotSearch() {
                     searchOptions: {
                         boost: { player: 2, team: 1.5 },
                         prefix: true,
-                        fuzzy: 0.2
+                        fuzzy: 0.2,
+                        combineWith: 'AND'
                     }
                 });
                 
