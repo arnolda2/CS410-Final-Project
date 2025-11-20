@@ -8,7 +8,6 @@ import type { SearchFilters } from './types';
 import { 
   Filter, 
   BarChart3, 
-  LayoutDashboard, 
   List, 
   Map as MapIcon,
   Github
@@ -47,7 +46,6 @@ function App() {
   const totalShots = shots.length;
   const madeShots = shots.filter(s => s.made).length;
   const fgPct = totalShots > 0 ? ((madeShots / totalShots) * 100).toFixed(1) : '0.0';
-  const ppg = totalShots > 0 ? (madeShots * (2 + (shots.filter(s => s.made && s.search_text.includes('3PT')).length / madeShots || 0))).toFixed(1) : '0.0'; // Rough estimate
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">

@@ -1,4 +1,4 @@
-import { ZoneStats } from '../types';
+import type { ZoneStats } from '../types';
 
 interface Props {
   stats: ZoneStats[];
