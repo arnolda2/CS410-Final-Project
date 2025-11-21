@@ -1,19 +1,10 @@
 # NBA Shot Search Engine
 
-A natural language search engine for NBA shots, visualized on a half-court map. Hosted  on GitHub Pages.
+A natural language search engine for NBA shots, visualized on a court map. Hosted  on GitHub Pages.
 
 Github Pages link: https://arnolda2.github.io/CS410-Final-Project/
 Might take a minute to load the data on to the github pages site.
 
-
-## Features
-
--   **Natural Language Search:** Search for shots using plain English (e.g., "Curry corner 3", "LeBron dunk", "Lillard 30ft").
--   **Interactive Shot Chart:** Visualizes made/missed shots on an accurate NBA half-court using D3.js.
--   **Player Filtering:** Smart autocomplete dropdown to filter shots by specific players (e.g., distinguish between Steph Curry and Seth Curry).
--   **Client-Side Search:** Powered by `minisearch`, running entirely in the browser with no backend server required.
--   **Efficient Data Loading:** Uses compressed JSON (`.json.gz`) and `DecompressionStream` to load ~200MB of shot data in seconds.
--   **UI:** Built with React, TypeScript, and Tailwind CSS v4.
 
 ## Project Structure
 
@@ -43,57 +34,3 @@ CS410-Final-Project/
 ├── tsconfig.json           # TypeScript configuration
 └── vite.config.ts          # Vite build configuration (base URL setup)
 ```
-
-## Data Pipeline
-
-The project uses a **static data indexing** approach to avoid the need for a backend database.
-
-1.  **Raw Data:** Sourced from Kaggle (NBA Shots 2004-2024).
-2.  **Processing (`scripts/process_data.py`):**
-    *   Reads CSVs for selected seasons (currently 2021-2024).
-    *   Clean and normalizes data (coordinates, zones, shot types).
-    *   Constructs a `search_text` field for full-text search.
-    *   Exports a highly optimized JSON file.
-    *   Compresses it using GZIP to `public/shots_index.json.gz` (~14MB).
-
-## Development
-
-### Prerequisites
--   Node.js (v20+)
--   Python 3.x (for data processing)
-
-### Setup
-
-1.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-
-2.  **Generate Data Index (Optional):**
-    If you have the raw CSV files in `data/`:
-    ```bash
-    python3 scripts/process_data.py
-    ```
-
-3.  **Run Locally:**
-    ```bash
-    npm run dev
-    ```
-    Open `http://localhost:5173/CS410-Final-Project/` in your browser.
-
-### Building for Production
-
-```bash
-npm run build
-```
-This compiles the app into the `dist/` folder, ready for deployment.
-
-
-## Search Logic
-
-The search engine uses **BM25** (Best Match 25) probabilistic retrieval via the `minisearch` library.
--   **Fields Indexed:** Player Name, Team, Action Type, Shot Zone, Basic Zone.
--   **Boosts:** Player names are boosted (2x) to prioritize specific players over generic terms.
--   **Fuzzy Search:** Enabled to handle minor typos in player names.
-
-
