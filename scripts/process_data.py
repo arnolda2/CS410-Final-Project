@@ -20,14 +20,13 @@ def process_data():
         print(f"Processing {season}...")
         df = pd.read_csv(file_path)
         
-        # Filter regular season if possible (assuming all shots in these files are valid for now)
-        # The file structure doesn't explicitly show SEASON_TYPE, so we use all.
+        # Filter regular season if possible
         
         # Convert date to YYYY-MM-DD for string sorting
         df['GAME_DATE'] = pd.to_datetime(df['GAME_DATE']).dt.strftime('%Y-%m-%d')
         
         # Create search_text
-        # Combine: Player, Team, Action Type, Zone info, Shot Type
+        # Combine Player, Team, Action Type, Zone info, Shot Type
         # Handle NaN values by replacing with empty string
         
         text_cols = ['PLAYER_NAME', 'TEAM_NAME', 'ACTION_TYPE', 'BASIC_ZONE', 'ZONE_NAME', 'ZONE_RANGE', 'SHOT_TYPE']
@@ -44,11 +43,8 @@ def process_data():
             df['SHOT_TYPE']
         )
         
-        # Simplify SHOT_MADE to boolean or 0/1 (it is TRUE/FALSE string in CSV likely, or boolean)
-        # Looking at csv sample: "FALSE", "TRUE". 
         df['made'] = df['SHOT_MADE'].apply(lambda x: 1 if str(x).upper() == 'TRUE' else 0)
         
-        # Select and rename columns
         df_selected = df[[
             'PLAYER_NAME', 
             'TEAM_NAME', 
@@ -73,7 +69,6 @@ def process_data():
             'BASIC_ZONE': 'zone'
         }, inplace=True)
         
-        # Optimization: Limit precision of float coordinates to 1 decimal place to save space
         df_selected['x'] = df_selected['x'].round(1)
         df_selected['y'] = df_selected['y'].round(1)
         
@@ -85,7 +80,6 @@ def process_data():
 
     combined_df = pd.concat(all_shots, ignore_index=True)
     
-    # Convert to list of dicts
     shots_list = combined_df.to_dict(orient='records')
     
     # Add an ID to each shot for search indexing
