@@ -1,10 +1,12 @@
 # NBA Shot Search Engine
 
-A natural language search engine for NBA shots, visualized on an interactive half-court map. Hosted entirely on GitHub Pages as a static Single Page Application (SPA).
+A natural language search engine for NBA shots, visualized on a half-court map. Hosted  on GitHub Pages.
 
-![NBA Shot Search Screenshot](https://i.imgur.com/Placeholder.png)
+Github Pages link: https://arnolda2.github.io/CS410-Final-Project/
+Might take a minute to load the data on to the github pages site.
 
-## 🚀 Features
+
+## Features
 
 -   **Natural Language Search:** Search for shots using plain English (e.g., "Curry corner 3", "LeBron dunk", "Lillard 30ft").
 -   **Interactive Shot Chart:** Visualizes made/missed shots on an accurate NBA half-court using D3.js.
@@ -13,7 +15,7 @@ A natural language search engine for NBA shots, visualized on an interactive hal
 -   **Efficient Data Loading:** Uses compressed JSON (`.json.gz`) and `DecompressionStream` to load ~200MB of shot data in seconds.
 -   **UI:** Built with React, TypeScript, and Tailwind CSS v4.
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 CS410-Final-Project/
@@ -42,7 +44,7 @@ CS410-Final-Project/
 └── vite.config.ts          # Vite build configuration (base URL setup)
 ```
 
-## 🛠️ Data Pipeline
+## Data Pipeline
 
 The project uses a **static data indexing** approach to avoid the need for a backend database.
 
@@ -54,7 +56,7 @@ The project uses a **static data indexing** approach to avoid the need for a bac
     *   Exports a highly optimized JSON file.
     *   Compresses it using GZIP to `public/shots_index.json.gz` (~14MB).
 
-## 💻 Development
+## Development
 
 ### Prerequisites
 -   Node.js (v20+)
@@ -86,23 +88,12 @@ npm run build
 ```
 This compiles the app into the `dist/` folder, ready for deployment.
 
-## 🌍 Deployment
 
-The project is configured to deploy automatically to **GitHub Pages**.
-
-1.  Push changes to the `main` branch.
-2.  The GitHub Action (`.github/workflows/deploy.yml`) will build the React app and publish it.
-3.  Ensure "GitHub Actions" is selected as the source in **Settings > Pages** on GitHub.
-
-## 🔍 Search Logic
+## Search Logic
 
 The search engine uses **BM25** (Best Match 25) probabilistic retrieval via the `minisearch` library.
 -   **Fields Indexed:** Player Name, Team, Action Type, Shot Zone, Basic Zone.
 -   **Boosts:** Player names are boosted (2x) to prioritize specific players over generic terms.
 -   **Fuzzy Search:** Enabled to handle minor typos in player names.
 
-## 📊 Visualization Details
 
-The court map is drawn using **D3.js** SVG paths.
--   **Coordinate System:** Standard NBA data uses a fixed coordinate system (Hoop at 0,0).
--   **Mapping:** We map these coordinates to SVG pixels, ensuring correct aspect ratio and court markings (3pt line, key, etc.).
