@@ -87,6 +87,28 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
+          {/* Searchable Terms */}
+          <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+            <h3 className="flex items-center gap-2 font-semibold text-slate-800 mb-4">
+              <Database size={20} className="text-nba-blue" />
+              Searchable Terms
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase block mb-2">Shot Types</span>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Jump Shot, Layup, Dunk, Hook Shot, Fadeaway, Step Back, Pullup, Floater, Alley Oop, Reverse, Bank Shot, Putback, Finger Roll
+                </p>
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-400 uppercase block mb-2">Court Zones</span>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Restricted Area, In The Paint (Non-RA), Mid-Range, Left/Right Corner 3, Above the Break 3, Backcourt
+                </p>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         {/* Footer */}
