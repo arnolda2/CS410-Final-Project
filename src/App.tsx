@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 function App() {
-  const { shots, zoneStats, isLoading, isIndexing, error, search, suggestPlayers } = useShotSearch();
+  const { shots, zoneStats, searchStats, hasSearched, isLoading, isIndexing, error, search, suggestPlayers } = useShotSearch();
   
   const [filters, setFilters] = useState<SearchFilters>({ 
     year: 'all', 
@@ -58,10 +58,10 @@ function App() {
     search(lastQuery, newFilters);
   };
 
-  // Calculate stats
-  const totalShots = shots.length;
-  const madeShots = shots.filter(s => s.made).length;
-  const fgPct = totalShots > 0 ? ((madeShots / totalShots) * 100).toFixed(1) : '0.0';
+  // Use stats from full result set (not sliced for display)
+  const totalShots = searchStats.totalShots;
+  const madeShots = searchStats.madeShots;
+  const fgPct = searchStats.fgPct.toFixed(1);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
@@ -187,11 +187,32 @@ function App() {
                       <MapIcon size={18} /> Shot Chart
                     </h2>
                     <span className="text-xs text-slate-400">
-                      Showing {shots.length >= 2000 ? '2000+' : shots.length} shots
+                      {hasSearched 
+                        ? totalShots > 2000 
+                          ? `Showing 2000 of ${totalShots.toLocaleString()} shots` 
+                          : `Showing ${totalShots.toLocaleString()} shots`
+                        : 'Search to see shots'}
                     </span>
                   </div>
                   <div className="relative bg-white min-h-[400px] md:min-h-[600px] flex items-center justify-center p-4">
-                    <ShotMap shots={shots} />
+                    {hasSearched ? (
+                      <ShotMap shots={shots} />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center p-8">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                          <MapIcon size={32} className="text-slate-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-700 mb-2">Ready to explore NBA shots</h3>
+                        <p className="text-sm text-slate-500 max-w-sm">
+                          Search for a player, shot type, or zone above to visualize shots on the court.
+                        </p>
+                        <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                          <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">Stephen Curry corner 3</span>
+                          <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">LeBron James dunk</span>
+                          <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">Lillard 30ft</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                </div>
             </div>
@@ -202,15 +223,15 @@ function App() {
               {/* Stats Cards */}
               <div className="grid grid-cols-3 gap-3">
                  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <div className="text-2xl font-bold text-slate-800">{totalShots}</div>
+                    <div className="text-2xl font-bold text-slate-800">{hasSearched ? totalShots.toLocaleString() : '—'}</div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Shots</div>
                  </div>
                  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <div className="text-2xl font-bold text-green-600">{madeShots}</div>
+                    <div className="text-2xl font-bold text-green-600">{hasSearched ? madeShots.toLocaleString() : '—'}</div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Made</div>
                  </div>
                  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <div className="text-2xl font-bold text-nba-blue">{fgPct}%</div>
+                    <div className="text-2xl font-bold text-nba-blue">{hasSearched ? `${fgPct}%` : '—'}</div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">FG%</div>
                  </div>
               </div>
@@ -235,35 +256,53 @@ function App() {
                 <div className="flex-1 overflow-y-auto p-4">
                    {activeTab === 'stats' ? (
                       <div className="space-y-6">
-                        <div>
-                           <h3 className="text-xs font-bold text-slate-400 uppercase mb-3">Shooting by Zone</h3>
-                           <ZoneChart stats={zoneStats} />
-                        </div>
-                        
-                        <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-800 leading-relaxed">
-                           <strong>Tip:</strong> Filter by a specific player to compare their efficiency against the league average in different zones.
-                        </div>
+                        {hasSearched && zoneStats.length > 0 ? (
+                          <>
+                            <div>
+                               <h3 className="text-xs font-bold text-slate-400 uppercase mb-3">Shooting by Zone</h3>
+                               <ZoneChart stats={zoneStats} />
+                            </div>
+                            
+                            <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-800 leading-relaxed">
+                               <strong>Tip:</strong> Filter by a specific player to compare their efficiency against the league average in different zones.
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-8 text-slate-400">
+                            <BarChart3 size={32} className="mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">{hasSearched ? 'No zone data for this search' : 'Search to see zone analysis'}</p>
+                          </div>
+                        )}
                       </div>
                    ) : (
                       <div className="space-y-2">
-                        {shots.slice(0, 50).map((shot) => (
-                          <div key={shot.id} className="text-sm border-b border-slate-100 pb-3 last:border-0">
-                            <div className="flex justify-between items-start mb-1">
-                               <span className="font-semibold text-slate-700 truncate pr-2">{shot.player}</span>
-                               <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${shot.made ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                                 {shot.made ? "MADE" : "MISS"}
-                               </span>
-                            </div>
-                            <div className="text-slate-500 text-xs flex justify-between">
-                              <span>{shot.dist}ft • {shot.zone}</span>
-                              <span>{shot.date}</span>
-                            </div>
-                            <div className="text-slate-400 text-[10px] mt-1 truncate">{shot.team}</div>
-                          </div>
-                        ))}
-                        {shots.length > 50 && (
-                          <div className="text-center text-slate-400 text-xs pt-2">
-                            ... {shots.length - 50} more
+                        {hasSearched && shots.length > 0 ? (
+                          <>
+                            {shots.slice(0, 50).map((shot) => (
+                              <div key={shot.id} className="text-sm border-b border-slate-100 pb-3 last:border-0">
+                                <div className="flex justify-between items-start mb-1">
+                                   <span className="font-semibold text-slate-700 truncate pr-2">{shot.player}</span>
+                                   <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${shot.made ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                                     {shot.made ? "MADE" : "MISS"}
+                                   </span>
+                                </div>
+                                <div className="text-slate-500 text-xs flex justify-between">
+                                  <span>{shot.dist}ft • {shot.zone}</span>
+                                  <span>{shot.date}</span>
+                                </div>
+                                <div className="text-slate-400 text-[10px] mt-1 truncate">{shot.team}</div>
+                              </div>
+                            ))}
+                            {totalShots > 50 && (
+                              <div className="text-center text-slate-400 text-xs pt-2">
+                                ... {totalShots - 50} more
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-center py-8 text-slate-400">
+                            <List size={32} className="mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">{hasSearched ? 'No shots found' : 'Search to see recent shots'}</p>
                           </div>
                         )}
                       </div>

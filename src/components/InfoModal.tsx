@@ -57,7 +57,15 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
               </div>
               <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
                 <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Zone</span>
-                <code className="text-sm font-mono text-blue-600">Jayson Tatum restricted area</code>
+                <code className="text-sm font-mono text-blue-600">Tatum restricted area</code>
+              </div>
+              <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Player & Distance</span>
+                <code className="text-sm font-mono text-blue-600">Lillard 30ft</code>
+              </div>
+              <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Team & Zone</span>
+                <code className="text-sm font-mono text-blue-600">Lakers mid-range</code>
               </div>
             </div>
           </div>

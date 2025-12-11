@@ -4,8 +4,17 @@ import type { Shot, SearchFilters, ZoneStats } from '../types';
 
 const DATA_URL = import.meta.env.BASE_URL + 'shots_index.json.gz';
 
+// Interface for search result statistics (before display limit is applied)
+export interface SearchStats {
+  totalShots: number;
+  madeShots: number;
+  fgPct: number;
+}
+
 export function useShotSearch() {
   const [shots, setShots] = useState<Shot[]>([]);
+  const [searchStats, setSearchStats] = useState<SearchStats>({ totalShots: 0, madeShots: 0, fgPct: 0 });
+  const [hasSearched, setHasSearched] = useState(false); // Track if user has searched
   const [isLoading, setIsLoading] = useState(true);
   const [isIndexing, setIsIndexing] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,11 +64,10 @@ export function useShotSearch() {
         });
         leagueZoneStatsRef.current = leagueStats;
 
-        setShots(data.slice(0, 2000)); // Initial display
-        
-        // Calculate initial zone stats
-        const initialZoneStats = computeZoneStats(data, leagueStats);
-        setZoneStats(initialZoneStats);
+        // Don't pre-populate shots - wait for user to search
+        setShots([]);
+        setZoneStats([]);
+        setSearchStats({ totalShots: 0, madeShots: 0, fgPct: 0 });
 
         // Extract unique players
         const players = new Set(data.map(s => s.player));
@@ -71,12 +79,12 @@ export function useShotSearch() {
         setTimeout(() => {
             try {
                 const miniSearch = new MiniSearch<Shot>({
-                    fields: ['search_text'], // Fields to index
-                    storeFields: ['id', 'player', 'team', 'x', 'y', 'made', 'year', 'date', 'dist', 'zone'], // Fields to return
+                    fields: ['search_text', 'player'], // Index both search_text and player separately
+                    storeFields: ['id', 'player', 'team', 'x', 'y', 'made', 'year', 'date', 'dist', 'zone'],
                     searchOptions: {
-                        boost: { player: 2, team: 1.5 },
+                        boost: { player: 3, search_text: 1 },
                         prefix: true,
-                        fuzzy: 0.2,
+                        fuzzy: false, // Disable fuzzy matching to prevent "Tatum" matching "Batum"
                         combineWith: 'AND'
                     }
                 });
@@ -129,16 +137,55 @@ export function useShotSearch() {
       return result;
   };
 
+  // Helper to parse distance from query (e.g., "Lillard 30ft" -> { cleanQuery: "Lillard", minDist, maxDist })
+  const parseDistanceFromQuery = (query: string): { cleanQuery: string; minDist?: number; maxDist?: number } => {
+    // Match patterns like "30ft", "30 ft", "30-ft", "30 feet"
+    const distancePattern = /(\d+)\s*(?:ft|feet)/gi;
+    const matches = [...query.matchAll(distancePattern)];
+    
+    if (matches.length === 0) {
+      return { cleanQuery: query };
+    }
+    
+    // Extract distance value and create a range (±2 feet tolerance)
+    const distance = parseInt(matches[0][1], 10);
+    const tolerance = 2;
+    
+    // Remove the distance pattern from the query for text search
+    const cleanQuery = query.replace(distancePattern, '').trim().replace(/\s+/g, ' ');
+    
+    return {
+      cleanQuery,
+      minDist: Math.max(0, distance - tolerance),
+      maxDist: distance + tolerance
+    };
+  };
+
   const search = useCallback((query: string, filters: SearchFilters) => {
+    setHasSearched(true);
     let results: Shot[] = [];
 
-    // If there is a query, use MiniSearch
-    if (query && miniSearchRef.current) {
+    // Parse distance from query if present
+    const { cleanQuery, minDist: queryMinDist, maxDist: queryMaxDist } = parseDistanceFromQuery(query);
+    
+    // Merge query-parsed distance with explicit filter distance (explicit filters take precedence)
+    const effectiveMinDist = filters.minDist !== undefined ? filters.minDist : queryMinDist;
+    const effectiveMaxDist = filters.maxDist !== undefined ? filters.maxDist : queryMaxDist;
+
+    // If there is a cleaned query, use MiniSearch
+    if (cleanQuery && miniSearchRef.current) {
       // @ts-ignore - MiniSearch types
-      const searchResults = miniSearchRef.current.search(query);
+      const searchResults = miniSearchRef.current.search(cleanQuery);
       results = searchResults.map(hit => hit as unknown as Shot);
-    } else {
+    } else if (!cleanQuery && (effectiveMinDist !== undefined || effectiveMaxDist !== undefined || filters.year !== 'all' || filters.made !== 'all')) {
+      // If only filters are applied (no text query), use all shots as base
       results = allShotsRef.current;
+    } else if (!cleanQuery) {
+      // No query and no filters - show empty state
+      setShots([]);
+      setZoneStats([]);
+      setSearchStats({ totalShots: 0, madeShots: 0, fgPct: 0 });
+      return;
     }
 
     // Apply filters
@@ -150,30 +197,33 @@ export function useShotSearch() {
       }
       if (filters.player && shot.player !== filters.player) return false;
       
-      // Distance filters
-      if (filters.minDist !== undefined && shot.dist < filters.minDist) return false;
-      if (filters.maxDist !== undefined && shot.dist > filters.maxDist) return false;
+      // Distance filters (combining query-parsed and explicit)
+      if (effectiveMinDist !== undefined && shot.dist < effectiveMinDist) return false;
+      if (effectiveMaxDist !== undefined && shot.dist > effectiveMaxDist) return false;
 
       return true;
     });
 
-    // Calculate stats on FULL filtered set
+    // Calculate stats on FULL filtered set (before slicing for display)
+    const totalShots = results.length;
+    const madeShots = results.filter(s => s.made === 1).length;
+    const fgPct = totalShots > 0 ? (madeShots / totalShots) * 100 : 0;
+    setSearchStats({ totalShots, madeShots, fgPct });
+
+    // Calculate zone stats on FULL filtered set
     const newZoneStats = computeZoneStats(results, leagueZoneStatsRef.current);
     setZoneStats(newZoneStats);
 
     // Apply sorting
     if (filters.sortBy === 'date') {
         results.sort((a, b) => b.date.localeCompare(a.date));
-    } else if (filters.sortBy === 'relevance' && !query) {
+    } else if (filters.sortBy === 'relevance' && !cleanQuery) {
         // If relevance requested but no query, fallback to date
          results.sort((a, b) => b.date.localeCompare(a.date));
     }
-    // Note: MiniSearch results are already sorted by relevanceScore if query exists, 
-    // but we might have lost order during filtering? 
-    // MiniSearch returns sorted hits. filter preserves order.
-    // So if sortBy is relevance, we don't re-sort unless we want to force it.
+    // Note: MiniSearch results are already sorted by relevanceScore if query exists
 
-    // Limit results for performance
+    // Limit results for display performance
     setShots(results.slice(0, 2000));
   }, []);
 
@@ -187,6 +237,8 @@ export function useShotSearch() {
   return {
     shots,
     zoneStats,
+    searchStats,
+    hasSearched,
     isLoading,
     isIndexing,
     error,

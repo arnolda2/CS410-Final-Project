@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface Props {
   onChange: (min: number | undefined, max: number | undefined) => void;
@@ -7,12 +7,23 @@ interface Props {
 export function DistanceFilter({ onChange }: Props) {
   const [min, setMin] = useState<string>('');
   const [max, setMax] = useState<string>('');
+  const isFirstRender = useRef(true);
+  
+  // Store latest callback in ref to avoid re-triggering effect
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   useEffect(() => {
+    // Skip the initial render to avoid triggering search on mount
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    
     const minVal = min === '' ? undefined : Number(min);
     const maxVal = max === '' ? undefined : Number(max);
-    onChange(minVal, maxVal);
-  }, [min, max, onChange]);
+    onChangeRef.current(minVal, maxVal);
+  }, [min, max]);
 
   return (
     <div className="flex items-center gap-2 bg-white p-2 rounded shadow-sm border border-gray-200">
