@@ -91,7 +91,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
             <h3 className="flex items-center gap-2 font-semibold text-slate-800 mb-4">
               <Database size={20} className="text-nba-blue" />
-              Searchable Terms
+              Some Searchable Terms
             </h3>
             <div className="space-y-4">
               <div>
