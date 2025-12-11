@@ -12,7 +12,7 @@ Might take a minute to load the data on to the github pages site.
 CS410-Final-Project/
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml      # GitHub Actions workflow to build & deploy to GitHub Pages
+│       └── deploy.yml      # GitHub Actions workflow to build and deploy to GitHub Pages
 ├── data/                   # Raw CSV data files
 │   └── NBA_202X_Shots.csv
 ├── public/
@@ -21,16 +21,16 @@ CS410-Final-Project/
 │   └── process_data.py     # Python script to clean, merge, and compress raw CSV data
 ├── src/
 │   ├── components/
-│   │   ├── SearchBar.tsx   # Search input with player autocomplete and chip filtering
-│   │   └── ShotMap.tsx     # D3.js visualization of the basketball court and shots
+│   │   ├── SearchBar.tsx   # Search input with filtering
+│   │   └── ShotMap.tsx     # Visualization of the basketball court and shots
 │   ├── hooks/
-│   │   └── useShotSearch.ts # loads data, handles decompression, manages MiniSearch
-│   ├── App.tsx             # Main dashboard layout (Stats, Map, Filters)
-│   ├── types.ts            # TypeScript interfaces for Shot and Filter data
-│   ├── index.css           # Tailwind CSS v4 configuration and global styles
-│   └── main.tsx            # React entry point
-├── index.html              # HTML entry point
-├── package.json            # Node.js dependencies and scripts
-├── tsconfig.json           # TypeScript configuration
-└── vite.config.ts          # Vite build configuration (base URL setup)
+│   │   └── useShotSearch.ts # Loads data, decompression, MiniSearch
+│   ├── App.tsx             # Dashboard layout
+│   ├── types.ts            # TypeScript interfaces for Shot data
+│   ├── index.css           
+│   └── main.tsx            
+├── index.html              
+├── package.json            
+├── tsconfig.json           
+└── vite.config.ts
 ```
