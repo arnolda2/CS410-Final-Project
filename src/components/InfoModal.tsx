@@ -44,7 +44,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Player & Shot Type</span>
+                <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Player</span>
                 <code className="text-sm font-mono text-blue-600">Austin Reaves</code>
               </div>
               <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
