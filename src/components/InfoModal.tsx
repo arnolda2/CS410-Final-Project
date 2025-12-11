@@ -32,7 +32,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
           {/* Intro */}
           <div className="prose prose-slate">
             <p className="text-slate-600 text-lg leading-relaxed">
-              This is a natural language search engine for NBA shots. It runs entirely in your browser, allowing you to explore millions of shots instantly without a backend server.
+              This is a natural language search engine for NBA shots. It runs entirely in your browser, allowing you to explore NBA shots over the past few seasons.
             </p>
           </div>
 
@@ -114,7 +114,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
         {/* Footer */}
         <div className="bg-slate-50 p-4 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-400">
-            Data provided by NBA Stats API. Built for CS410.
+            NBA Shot Search Engine
           </p>
         </div>
       </div>
