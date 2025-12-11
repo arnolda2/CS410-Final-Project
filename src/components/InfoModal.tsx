@@ -45,11 +45,11 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
                 <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Player & Shot Type</span>
-                <code className="text-sm font-mono text-blue-600">Stephen Curry corner 3</code>
+                <code className="text-sm font-mono text-blue-600">Austin Reaves</code>
               </div>
               <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Distance</span>
-                <code className="text-sm font-mono text-blue-600">Lillard 30ft</code>
+                <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Player & Shot Type</span>
+                <code className="text-sm font-mono text-blue-600">Stephen Curry corner 3</code>
               </div>
               <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
                 <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Specific Action</span>
@@ -57,7 +57,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
               </div>
               <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
                 <span className="text-xs font-bold text-slate-400 uppercase block mb-1">Zone</span>
-                <code className="text-sm font-mono text-blue-600">Tatum restricted area</code>
+                <code className="text-sm font-mono text-blue-600">Jayson Tatum restricted area</code>
               </div>
             </div>
           </div>
